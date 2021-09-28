@@ -21,7 +21,6 @@ func TestVarStatement(t *testing.T) {
 	program := p.ParseProgram()
 	checkParseErrrors(t, p)
 
-
 	if program == nil {
 		t.Fatalf("ParserProgram() returned nil")
 	}
@@ -103,7 +102,7 @@ func TestIdentifierExpress(t *testing.T) {
 		t.Fatalf("Program.statement[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
 	}
 
-	ident, ok := stmt.Expression.(*ast.Identifier) 
+	ident, ok := stmt.Expression.(*ast.Identifier)
 
 	if !ok {
 		t.Fatalf("Exp no *ast.Identifier got=%T", stmt.Expression)
@@ -112,8 +111,104 @@ func TestIdentifierExpress(t *testing.T) {
 		t.Errorf("Ident value not footbar got=%s", ident.Value)
 	}
 	if ident.TokenLiteral() != "foobar" {
-		t.Errorf("Ident token literal not foobar got=%s",ident.TokenLiteral())
+		t.Errorf("Ident token literal not foobar got=%s", ident.TokenLiteral())
 	}
+}
+
+func TestIntegerLiteralExpress(t *testing.T) {
+	inputr := `5;`
+
+	l := lexer.New(inputr)
+	p := parser.New(l)
+
+	program := p.ParseProgram()
+	checkParseErrrors(t, p)
+
+	if program == nil {
+		t.Fatalf("ParserProgram() returned nil")
+	}
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program statements does not contain  statments. got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Program.statement[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+	}
+
+	ident, ok := stmt.Expression.(*ast.IntegerLiteral)
+
+	if !ok {
+		t.Fatalf("Exp no *ast.IntegerLiteral got=%T", stmt.Expression)
+	}
+	if ident.Value != 5 {
+		t.Errorf("Ident value not 5  got=%d", ident.Value)
+	}
+	if ident.TokenLiteral() != "5" {
+		t.Errorf("Ident token literal not 5 got=%s", ident.TokenLiteral())
+	}
+}
+
+func TestParsingPrefixExpressions(t *testing.T) {
+	prefixTest := []struct {
+		input        string
+		operator     string
+		integerValue int64
+	}{
+		{"!5;", "!", 5},
+		{"-15;", "-", 15},
+	}
+
+	for _, tt := range prefixTest {
+		l := lexer.New(tt.input)
+		p := parser.New(l)
+
+		program := p.ParseProgram()
+		checkParseErrrors(t, p)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("Program statements does not contain 1  statments. got=%d", len(program.Statements))
+		}
+
+		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf("Program.statement[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+		}
+		exp, ok := stmt.Expression.(*ast.PrefixExpression)
+
+		if !ok {
+			t.Fatalf("stmt is not ast.PreflixExpress. got=%T", stmt.Expression)
+		}
+
+		if exp.Operator != tt.operator {
+			t.Fatalf("exp.Operator is not %s got=%s", tt.operator, exp.Operator)
+		}
+
+		if !testInegerLiteral(t, exp.Right, tt.integerValue) {
+			return
+		}
+	}
+}
+
+func testInegerLiteral(t *testing.T, il ast.Expression, value int64) bool {
+	integ, ok := il.(*ast.IntegerLiteral)
+
+	if !ok {
+		t.Errorf("il not *ast.IntegerLiteral, got=%T", il)
+		return false
+	}
+
+	if integ.Value != value {
+		t.Errorf("integ.Value not %d got %d", value, integ.Value)
+		return false
+	}
+
+	if integ.TokenLiteral() != fmt.Sprintf("%d", value) {
+		t.Errorf("integ.TokenLiteral not %d got=%s", value, integ.TokenLiteral())
+	}
+
+	return true
 }
 
 func testVarStatement(t *testing.T, s ast.Statement, name string) bool {
