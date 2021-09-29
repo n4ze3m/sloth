@@ -20,6 +20,17 @@ const (
 	CALL
 )
 
+var procedences = map[token.TokenType]int{
+	token.EQ:       EQUALS,
+	token.NOT_EQ:   EQUALS,
+	token.LT:       LESSGREATER,
+	token.GT:       LESSGREATER,
+	token.PLUS:     SUM,
+	token.MINUS:    SUM,
+	token.SLASH:    PRODUCT,
+	token.ASTERISK: PRODUCT,
+}
+
 type Parser struct {
 	l         *lexer.Lexer
 	curToken  token.Token
@@ -38,6 +49,18 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.INT, p.parseIntegerLiteral)
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
+
+	p.inflixParseFns = make(map[token.TokenType]inflixParseFn)
+	p.registerInflix(token.PLUS, p.parseInflixExpression)
+	p.registerInflix(token.MINUS, p.parseInflixExpression)
+	p.registerInflix(token.SLASH, p.parseInflixExpression)
+	p.registerInflix(token.ASTERISK, p.parseInflixExpression)
+	p.registerInflix(token.EQ, p.parseInflixExpression)
+	p.registerInflix(token.NOT_EQ, p.parseInflixExpression)
+	p.registerInflix(token.LT, p.parseInflixExpression)
+	p.registerInflix(token.GT, p.parseInflixExpression)
+
+
 	p.nextToken()
 	p.nextToken()
 
@@ -60,9 +83,7 @@ func (p *Parser) ParseProgram() *ast.Program {
 
 	for p.curToken.Type != token.EOF {
 		stmt := p.parseStatement()
-		if stmt != nil {
-			program.Statements = append(program.Statements, stmt)
-		}
+		program.Statements = append(program.Statements, stmt)
 		p.nextToken()
 	}
 
@@ -80,7 +101,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	}
 }
 
-func (p *Parser) parseIdentifier() ast.Expression{
+func (p *Parser) parseIdentifier() ast.Expression {
 	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 }
 
@@ -132,12 +153,21 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	}
 	leftExp := prefix()
 
+	for !p.peekTokenIs(token.SEMICOLN) && precedence < p.peekPrecedence() {
+		infix := p.inflixParseFns[p.peekToken.Type]
+		if infix == nil {
+			return leftExp
+		}
+		p.nextToken()
+		leftExp = infix(leftExp)
+	}
+
 	return leftExp
 }
 
 func (p *Parser) parseIntegerLiteral() ast.Expression {
-	lit := &ast.IntegerLiteral{Token: p.curToken} 
-	value, err := strconv.ParseInt(p.curToken.Literal, 0,64)
+	lit := &ast.IntegerLiteral{Token: p.curToken}
+	value, err := strconv.ParseInt(p.curToken.Literal, 0, 64)
 	if err != nil {
 		msg := fmt.Sprintf("could not parse %q as interger", p.curToken.Literal)
 		p.errors = append(p.errors, msg)
@@ -183,17 +213,44 @@ func (p *Parser) registerInflix(tokenType token.TokenType, fn inflixParseFn) {
 }
 
 func (p *Parser) noPrefixParseFnError(t token.TokenType) {
-	msg := fmt.Sprintf("No prefix parse function for %s found" , t)
+	msg := fmt.Sprintf("No prefix parse function for %s found", t)
 	p.errors = append(p.errors, msg)
 }
 
 func (p *Parser) parsePrefixExpression() ast.Expression {
 	expression := &ast.PrefixExpression{
-		Token: p.curToken,
+		Token:    p.curToken,
 		Operator: p.curToken.Literal,
 	}
 	p.nextToken()
 	expression.Right = p.parseExpression(PREFIX)
 
+	return expression
+}
+
+func (p *Parser) peekPrecedence() int {
+	if p, ok := procedences[p.peekToken.Type]; ok {
+		return p
+	}
+	return LOWEST
+}
+
+func (p *Parser) curPrecedence() int {
+	if p, ok := procedences[p.curToken.Type]; ok {
+		return p
+	}
+	return LOWEST
+}
+
+func (p *Parser) parseInflixExpression(left ast.Expression) ast.Expression {
+	expression := &ast.InflixExpression{
+		Token:    p.curToken,
+		Operator: p.curToken.Literal,
+		Left:     left,
+	}
+
+	precedence := p.curPrecedence()
+	p.nextToken()
+	expression.Right = p.parseExpression(precedence)
 	return expression
 }

@@ -2,10 +2,11 @@ package parser_test
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/nazeemnato/sloth/ast"
 	"github.com/nazeemnato/sloth/lexer"
 	"github.com/nazeemnato/sloth/parser"
-	"testing"
 )
 
 func TestVarStatement(t *testing.T) {
@@ -173,7 +174,7 @@ func TestParsingPrefixExpressions(t *testing.T) {
 
 		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
 		if !ok {
-			t.Fatalf("Program.statement[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+			t.Fatalf("Program.statement[0] is not .EastxpressionStatement. got=%T", program.Statements[0])
 		}
 		exp, ok := stmt.Expression.(*ast.PrefixExpression)
 
@@ -187,6 +188,83 @@ func TestParsingPrefixExpressions(t *testing.T) {
 
 		if !testInegerLiteral(t, exp.Right, tt.integerValue) {
 			return
+		}
+	}
+}
+
+func TestParsingInflixExpression(t *testing.T) {
+	inflixTests := []struct {
+		input      string
+		leftValue  int64
+		operator   string
+		rightValue int64
+	}{
+		{"5 + 5;", 5, "+", 5},
+		{"5 - 5;", 5, "-", 5},
+		{"5 * 5;", 5, "*", 5},
+		{"5 / 5;", 5, "/", 5},
+		{"5 > 5;", 5, ">", 5},
+		{"5 < 5;", 5, "<", 5},
+		{"5 == 5;", 5, "==", 5},
+		{"5 != 5;", 5, "!=", 5},
+	}
+
+	for _, tt := range inflixTests {
+		l := lexer.New(tt.input)
+		p := parser.New(l)
+
+		program := p.ParseProgram()
+		checkParseErrrors(t, p)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("Program statements does not contain 1  statments. got=%d", len(program.Statements))
+		}
+
+		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf("Program.statement[0] is not .EastxpressionStatement. got=%T", program.Statements[0])
+		}
+		exp, ok := stmt.Expression.(*ast.InflixExpression)
+
+		if !ok {
+			t.Fatalf("exp is not ast.InflixExpress got=%T", stmt.Expression)
+		}
+
+		if !testInegerLiteral(t, exp.Left, tt.leftValue) {
+			return
+		}
+		if exp.Operator != tt.operator {
+			t.Fatalf("exp.Operator is not '%s' got=%s", tt.operator, exp.Operator)
+		}
+
+		if !testInegerLiteral(t, exp.Right, tt.rightValue) {
+			return
+		}
+
+	}
+}
+
+func TestOperatorPrecedenceParsing(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"-a * b", "((-a) * b)"},
+		{"!-a", "(!(-a))"},
+		{"a+b+c", "((a + b) + c)"},
+	}
+
+	for _, tt := range tests {
+		l := lexer.New(tt.input)
+		p := parser.New(l)
+
+		program := p.ParseProgram()
+		checkParseErrrors(t, p)
+
+		actual := program.String()
+
+		if actual != tt.expected {
+			t.Errorf("excpected=%q, got=%q", tt.expected, actual)
 		}
 	}
 }
@@ -246,4 +324,61 @@ func checkParseErrrors(t *testing.T, p *parser.Parser) {
 		t.Errorf("Parser error :%q", msg)
 	}
 	t.FailNow()
+}
+
+func testIdentifer(t *testing.T, exp ast.Expression, value string) bool {
+	ident, ok := exp.(*ast.Identifier)
+	if !ok {
+		t.Errorf("Exp not *ast.Identifier got=%T", exp)
+		return false
+	}
+
+	if ident.Value != value {
+		t.Errorf("Ident.Value not %s got=%s", value, ident.Value)
+		return false
+	}
+
+	if ident.TokenLiteral() != value {
+		t.Errorf("ident.TokenLiteral not %s got =%s", value, ident.TokenLiteral())
+		return false
+	}
+
+	return true
+}
+
+func testLiteralExpression(t *testing.T, exp ast.Expression, expected interface{}) bool {
+	switch v := expected.(type) {
+	case int:
+		return testInegerLiteral(t, exp, int64(v))
+	case int64:
+		return testInegerLiteral(t, exp, v)
+	case string:
+		return testIdentifer(t, exp, v)
+	}
+	t.Errorf("Type of exp not handled got=%T", exp)
+	return false
+}
+
+func testInflixExpression(t *testing.T, exp ast.Expression, left interface{} , operator string, right interface{}) bool{ 
+	opExp, ok := exp.(*ast.InflixExpression)
+
+	if !ok {
+		t.Errorf("exp is not ast.OperatorExpression got=%T, %s", exp, exp)
+		return false
+	}
+
+	if !testLiteralExpression(t, opExp.Left, left) {
+		return false
+	}
+
+	if opExp.Operator != operator {
+		t.Errorf("Exp operator is not %s got =%q", operator, opExp.Operator)
+		return false
+	}
+
+	if !testLiteralExpression(t, opExp.Right, right) {
+		return false
+	}
+
+	return true
 }
