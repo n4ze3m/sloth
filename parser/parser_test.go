@@ -253,7 +253,8 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		input    string
 		expected string
 	}{
-		{"1 + (2 + 3) + 4", "((1 + (2 + 3))  + 4)"},
+		{"a + add(b * c) + d", "((a + add((b * c))) + d)"},
+		{"1 + (2 + 3) + 4", "((1 + (2 + 3)) + 4)"},
 		{"-a * b", "((-a) * b)"},
 		{"!-a", "(!(-a))"},
 		{"a+b+c", "((a + b) + c)"},
@@ -430,6 +431,44 @@ func TestFunctionLiteralParameterParsing(t *testing.T) {
 			testLiteralExpression(t, function.Parameters[i], ident)
 		}
 	}
+}
+
+func TestCallExpression(t *testing.T) {
+	input := "add(1, 2 * 3, 4 + 5);"
+
+	l := lexer.New(input)
+	p := parser.New(l)
+
+	program := p.ParseProgram()
+	checkParseErrrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("Program statements does not contain  statments. got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("Program.statement[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+	}
+
+	exp, ok := stmt.Expression.(*ast.CallExpression)
+
+	if !ok {
+		t.Fatalf("stmt.Expression is unknow got=%T", stmt.Expression)
+	}
+
+	if !testIdentifer(t, exp.Function, "add") {
+		return
+	}
+
+	if len(exp.Arguments) != 3 {
+		t.Fatalf("Length argument is not 3 got=%d", len(exp.Arguments))
+	}
+
+	testLiteralExpression(t, exp.Arguments[0],1)
+	testInflixExpression(t, exp.Arguments[1], 2, "*", 3)
+	testInflixExpression(t, exp.Arguments[2], 4, "+", 5)
+
 }
 
 func testInegerLiteral(t *testing.T, il ast.Expression, value int64) bool {
