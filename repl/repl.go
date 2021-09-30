@@ -6,7 +6,7 @@ import (
 	"io"
 
 	"github.com/nazeemnato/sloth/lexer"
-	"github.com/nazeemnato/sloth/token"
+	"github.com/nazeemnato/sloth/parser"
 )
 
 const PROMT = ">>> "
@@ -15,7 +15,7 @@ func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
 
 	for {
-		fmt.Printf(PROMT)
+		fmt.Print(PROMT)
 		scanned := scanner.Scan()
 
 		if !scanned {
@@ -23,11 +23,24 @@ func Start(in io.Reader, out io.Writer) {
 		}
 
 		line := scanner.Text()
-
 		l := lexer.New(line)
+		p := parser.New(l)
 
-		for tok := l.NextToken(); tok.Type != token.EOF; tok = l.NextToken() {
-			fmt.Printf("%+v\n", tok)
+		program := p.ParseProgram()
+		if len(p.Errors()) != 0 {
+			printParseErrors(out, p.Errors())
+			continue
 		}
+
+		io.WriteString(out, program.String())
+		io.WriteString(out, "\n")
+	}
+}
+
+func printParseErrors(out io.Writer, errors []string) {
+	for _, msg := range errors {
+		io.WriteString(out,"Woops!! We ran into some errors\n")
+		io.WriteString(out,"parser errors:\n")
+		io.WriteString(out, "\t"+msg+"\n")
 	}
 }
