@@ -1,15 +1,22 @@
 package object
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+	"strings"
+
+	"github.com/nazeemnato/sloth/ast"
+)
 
 type ObjectType string
 
 const (
-	INTEGER_OBJ = "INTEGER"
-	BOOLEAN_OBJ = "BOOLEAN"
-	NULL_OBJ = "NULL"
+	INTEGER_OBJ      = "INTEGER"
+	BOOLEAN_OBJ      = "BOOLEAN"
+	NULL_OBJ         = "NULL"
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
-	ERROR_OBJ = "ERROR"
+	ERROR_OBJ        = "ERROR"
+	FUNTION_OBJ      = "FUNCTION"
 )
 
 type Object interface {
@@ -41,21 +48,21 @@ func (b *Boolean) Type() ObjectType {
 	return BOOLEAN_OBJ
 }
 
-type Null struct {}
+type Null struct{}
 
 func (n *Null) Inspect() string {
 	return "null"
 }
 
 func (n *Null) Type() ObjectType {
-	return NULL_OBJ 
+	return NULL_OBJ
 }
 
 type ReturnValue struct {
 	Value Object
 }
 
-func (rv *ReturnValue) Type() ObjectType  {
+func (rv *ReturnValue) Type() ObjectType {
 	return RETURN_VALUE_OBJ
 }
 
@@ -73,4 +80,34 @@ func (e *Error) Type() ObjectType {
 
 func (e *Error) Inspect() string {
 	return "ERROR: " + e.Message
+}
+
+type Function struct {
+	Parameters []*ast.Identifier
+	Body       *ast.BlockStatement
+	Env        *Enviroment
+}
+
+func (f *Function) Type() ObjectType {
+	return FUNTION_OBJ
+}
+
+func (f *Function) Inspect() string {
+	var out bytes.Buffer
+
+	params := []string{}
+
+	for _, p := range f.Parameters {
+		params = append(params, p.String())
+	}
+
+	out.WriteString("fun")
+	out.WriteString("(")
+	out.WriteString(strings.Join(params, ", "))
+	out.WriteString(") {\n")
+	out.WriteString(f.Body.String())
+	out.WriteString("\n}")
+
+	return out.String()
+
 }

@@ -106,11 +106,113 @@ func TestReturnExpression(t *testing.T) {
 	}
 }
 
+func TestErrorHandling(t *testing.T) {
+	tests := []struct {
+		input           string
+		expectedMessage string
+	}{
+		{"5 + true", "type mismatch: INTEGER + BOOLEAN"},
+		{"-true", "unknown operator: -BOOLEAN"},
+		{`if(10 > 1) {
+			if(10 > 1) {
+				return true + false;
+			}
+			return 1
+		}`, "unknown operator: BOOLEAN + BOOLEAN"},
+		{
+			"foobar",
+			"identifier not found: foobar",
+		},
+	}
+
+	for _, tt := range tests {
+		evaluted := testEval(tt.input)
+		errObj, ok := evaluted.(*object.Error)
+
+		if !ok {
+			t.Errorf("no error object returned got=%T (%+v)", evaluted, evaluted)
+			continue
+		}
+
+		if errObj.Message != tt.expectedMessage {
+			t.Errorf("wrong message! exptected=%q got=%q", tt.expectedMessage, errObj.Message)
+		}
+	}
+}
+
+func TestVarStatements(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"var x = 10; x;", 10},
+		{"var x = 10 * 10; x;", 100},
+	}
+
+	for _, tt := range tests {
+		testIntegerObject(t, testEval(tt.input), tt.expected)
+	}
+}
+
+func TestFunctionObject(t *testing.T) {
+	input := "fun(x) { x + 2; }"
+
+	evaluated := testEval(input)
+
+	fun, ok := evaluated.(*object.Function)
+
+	if !ok {
+		t.Fatalf("object is not Function got=%T got=%T", evaluated, evaluated)
+	}
+
+	if len(fun.Parameters) !=  1 {
+		t.Fatalf("function has wrong parameters. Parameters=%+v", fun.Parameters)
+	}
+
+	if fun.Parameters[0].String() != "x" {
+		t.Fatalf("parameter is not 'x' got=%q", fun.Parameters[0])
+	}
+
+	expectedBody := "(x + 2)"
+
+	if fun.Body.String() != expectedBody {
+		t.Fatalf("body is not %q got=%q", expectedBody, fun.Body.String())
+	}
+}
+
+func TestFunctionApplication(t *testing.T) {
+	tests := []struct {
+		input string
+		expected int64
+	} {
+		{"var k = fun(x) { x;}; k(4)", 4},
+		{"var add = fun(x,y) { return x + y;}; add(1,2);",3},
+	}
+
+	for _, tt := range tests {
+		testIntegerObject(t, testEval(tt.input), tt.expected)
+	}
+}
+
+func TestClosures(t *testing.T) {
+	input := `
+	var add = fun(x) {
+		fun(y) {
+			x + y;
+		};
+	};
+	var addTwo = add(2)
+	addTwo(2)
+	`
+	testIntegerObject(t, testEval(input), 4)
+}
+
 func testEval(input string) object.Object {
 	l := lexer.New(input)
 	p := parser.New(l)
+	env := object.NewEnviroment()
 	program := p.ParseProgram()
-	return Eval(program)
+	return Eval(program,env)
 }
 
 func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool {

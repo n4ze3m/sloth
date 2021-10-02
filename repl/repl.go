@@ -7,6 +7,7 @@ import (
 
 	"github.com/nazeemnato/sloth/evaluator"
 	"github.com/nazeemnato/sloth/lexer"
+	"github.com/nazeemnato/sloth/object"
 	"github.com/nazeemnato/sloth/parser"
 )
 
@@ -14,6 +15,7 @@ const PROMT = ">>> "
 
 func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
+	env := object.NewEnviroment()
 
 	for {
 		fmt.Print(PROMT)
@@ -33,7 +35,7 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		evaluted := evaluator.Eval(program)
+		evaluted := evaluator.Eval(program, env)
 		
 		if evaluted != nil {
 			io.WriteString(out, evaluted.Inspect())
