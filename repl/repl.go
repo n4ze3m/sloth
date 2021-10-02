@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/nazeemnato/sloth/evaluator"
 	"github.com/nazeemnato/sloth/lexer"
 	"github.com/nazeemnato/sloth/parser"
 )
@@ -32,8 +33,12 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		io.WriteString(out, program.String())
-		io.WriteString(out, "\n")
+		evaluted := evaluator.Eval(program)
+		
+		if evaluted != nil {
+			io.WriteString(out, evaluted.Inspect())
+			io.WriteString(out, "\n")
+		}
 	}
 }
 
