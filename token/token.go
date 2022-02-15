@@ -38,7 +38,7 @@ const (
 	LBRACE = "{"
 	RBRACE = "}"
 
-	EQ = "=="
+	EQ     = "=="
 	NOT_EQ = "!="
 
 	// Keywords
@@ -49,15 +49,17 @@ const (
 	IF       = "IF"
 	ELSE     = "ELSE"
 	RETURN   = "RETURN"
+
+	STRING = "STRING"
 )
 
 var keywords = map[string]TokenType{
-	"fun": FUNCTION,
-	"var": VAR,
-	"true": TRUE,
-	"false": FALSE,
-	"if": IF,
-	"else": ELSE,
+	"fun":    FUNCTION,
+	"var":    VAR,
+	"true":   TRUE,
+	"false":  FALSE,
+	"if":     IF,
+	"else":   ELSE,
 	"return": RETURN,
 }
 
