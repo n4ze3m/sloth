@@ -123,6 +123,10 @@ func TestErrorHandling(t *testing.T) {
 			"foobar",
 			"identifier not found: foobar",
 		},
+		{
+			`"Hello" - "World"`,
+			"unknown operator: STRING - STRING",
+		},
 	}
 
 	for _, tt := range tests {
@@ -165,7 +169,7 @@ func TestFunctionObject(t *testing.T) {
 		t.Fatalf("object is not Function got=%T got=%T", evaluated, evaluated)
 	}
 
-	if len(fun.Parameters) !=  1 {
+	if len(fun.Parameters) != 1 {
 		t.Fatalf("function has wrong parameters. Parameters=%+v", fun.Parameters)
 	}
 
@@ -182,11 +186,11 @@ func TestFunctionObject(t *testing.T) {
 
 func TestFunctionApplication(t *testing.T) {
 	tests := []struct {
-		input string
+		input    string
 		expected int64
-	} {
+	}{
 		{"var k = fun(x) { x;}; k(4)", 4},
-		{"var add = fun(x,y) { return x + y;}; add(1,2);",3},
+		{"var add = fun(x,y) { return x + y;}; add(1,2);", 3},
 	}
 
 	for _, tt := range tests {
@@ -197,9 +201,7 @@ func TestFunctionApplication(t *testing.T) {
 func TestClosures(t *testing.T) {
 	input := `
 	var add = fun(x) {
-		fun(y) {
-			x + y;
-		};
+		fun(y) {x + y};
 	};
 	var addTwo = add(2)
 	addTwo(2)
@@ -212,7 +214,7 @@ func testEval(input string) object.Object {
 	p := parser.New(l)
 	env := object.NewEnviroment()
 	program := p.ParseProgram()
-	return Eval(program,env)
+	return Eval(program, env)
 }
 
 func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool {
@@ -253,4 +255,58 @@ func testNullObject(t *testing.T, obj object.Object) bool {
 		return false
 	}
 	return true
+}
+
+func TestStringLiteral(t *testing.T) {
+	input := `"Hello World"`
+	evaluated := testEval(input)
+	str, ok := evaluated.(*object.String)
+	if !ok {
+		t.Fatalf("object is not String got=%T (%+v)", evaluated, evaluated)
+	}
+	if str.Value != "Hello World" {
+		t.Errorf("String has wrong value got=%q", str.Value)
+	}
+}
+
+func TestStringConcatenation(t *testing.T) {
+	input := `"Hello" + " " + "World"`
+	evaluated := testEval(input)
+	str, ok := evaluated.(*object.String)
+	if !ok {
+		t.Fatalf("object is not String got=%T (%+v)", evaluated, evaluated)
+	}
+	if str.Value != "Hello World" {
+		t.Errorf("String has wrong value got=%q", str.Value)
+	}
+}
+
+
+func TestBuiltinFunctions(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{`len("")`, 0},
+		{`len("four")`,4},
+		{`len(1)`,"argument to `len` not supported, got INTEGER"},
+	}
+
+	for _, tt:= range tests {
+		evaluated := testEval(tt.input)
+
+		switch expected := tt.expected.(type) {
+		case int:
+			testIntegerObject(t, evaluated, int64(expected))
+		case string:
+			errObj, ok := evaluated.(*object.Error)
+			if !ok {
+				t.Errorf("object is not Error got=%T (%+v)", evaluated, evaluated)
+				continue
+			}
+			if errObj.Message != expected {
+				t.Errorf("wrong error message. expected=%q, got=%q", expected, errObj.Message)
+			}
+		}
+	}
 }
