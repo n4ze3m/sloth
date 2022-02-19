@@ -13,7 +13,8 @@ func TestVarStatement(t *testing.T) {
 	input := `
 	var x = 5;
 	var y = 10;
-	var foobar = 2232;
+	var fooBar = 2232;
+	var firstName = "nazeem"
 	`
 
 	l := lexer.New(input)
@@ -35,7 +36,8 @@ func TestVarStatement(t *testing.T) {
 	}{
 		{"x"},
 		{"y"},
-		{"foobar"},
+		{"fooBar"},
+		{"firstName"},
 	}
 
 	for i, tt := range tests {
@@ -649,4 +651,28 @@ func TestParsingArrayLiteral(t *testing.T) {
 	testIntegerLiteral(t, array.Elements[0], 1)
 	testInflixExpression(t, array.Elements[1], 2, "*", 2)
 	testInflixExpression(t, array.Elements[2], 3, "+", 3)
+}
+
+func TestParsingIndexExpressions(t *testing.T) {
+	input := "myArray[1 + 1]"
+	l := lexer.New(input)
+	p := parser.New(l)
+
+	program := p.ParseProgram()
+	checkParserErrors(t,p)
+
+	stmt, _ := program.Statements[0].(*ast.ExpressionStatement)
+	indexExp, ok := stmt.Expression.(*ast.IndexExpression)
+
+	if !ok {
+		t.Fatalf("exp not *as.IndexExpression")
+	}
+
+	if !testIdentifer(t, indexExp.Left, "myArray"){
+		return
+	}
+
+	if !testInflixExpression(t, indexExp.Index, 1, "+", 1) {
+		return
+	}
 }
