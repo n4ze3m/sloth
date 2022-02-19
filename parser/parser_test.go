@@ -13,14 +13,15 @@ func TestVarStatement(t *testing.T) {
 	input := `
 	var x = 5;
 	var y = 10;
-	var foobar = 2232;
+	var fooBar = 2232;
+	var firstName = "nazeem"
 	`
 
 	l := lexer.New(input)
 	p := parser.New(l)
 
 	program := p.ParseProgram()
-	checkParseErrrors(t, p)
+	checkParserErrors(t, p)
 
 	if program == nil {
 		t.Fatalf("ParserProgram() returned nil")
@@ -35,7 +36,8 @@ func TestVarStatement(t *testing.T) {
 	}{
 		{"x"},
 		{"y"},
-		{"foobar"},
+		{"fooBar"},
+		{"firstName"},
 	}
 
 	for i, tt := range tests {
@@ -58,7 +60,7 @@ func TestReturnStatement(t *testing.T) {
 	p := parser.New(l)
 
 	program := p.ParseProgram()
-	checkParseErrrors(t, p)
+	checkParserErrors(t, p)
 
 	if program == nil {
 		t.Fatalf("ParserProgram() returned nil")
@@ -88,7 +90,7 @@ func TestIdentifierExpress(t *testing.T) {
 	p := parser.New(l)
 
 	program := p.ParseProgram()
-	checkParseErrrors(t, p)
+	checkParserErrors(t, p)
 
 	if program == nil {
 		t.Fatalf("ParserProgram() returned nil")
@@ -123,7 +125,7 @@ func TestIntegerLiteralExpress(t *testing.T) {
 	p := parser.New(l)
 
 	program := p.ParseProgram()
-	checkParseErrrors(t, p)
+	checkParserErrors(t, p)
 
 	if program == nil {
 		t.Fatalf("ParserProgram() returned nil")
@@ -167,7 +169,7 @@ func TestParsingPrefixExpressions(t *testing.T) {
 		p := parser.New(l)
 
 		program := p.ParseProgram()
-		checkParseErrrors(t, p)
+		checkParserErrors(t, p)
 
 		if len(program.Statements) != 1 {
 			t.Fatalf("Program statements does not contain 1  statments. got=%d", len(program.Statements))
@@ -218,7 +220,7 @@ func TestParsingInflixExpression(t *testing.T) {
 		p := parser.New(l)
 
 		program := p.ParseProgram()
-		checkParseErrrors(t, p)
+		checkParserErrors(t, p)
 
 		if len(program.Statements) != 1 {
 			t.Fatalf("Program statements does not contain 1  statments. got=%d", len(program.Statements))
@@ -269,7 +271,7 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		p := parser.New(l)
 
 		program := p.ParseProgram()
-		checkParseErrrors(t, p)
+		checkParserErrors(t, p)
 
 		actual := program.String()
 
@@ -286,7 +288,7 @@ func TestBooleanExpression(t *testing.T) {
 	p := parser.New(l)
 
 	program := p.ParseProgram()
-	checkParseErrrors(t, p)
+	checkParserErrors(t, p)
 
 	if program == nil {
 		t.Fatalf("ParserProgram() returned nil")
@@ -321,7 +323,7 @@ func TestIfExpression(t *testing.T) {
 	p := parser.New(l)
 
 	program := p.ParseProgram()
-	checkParseErrrors(t, p)
+	checkParserErrors(t, p)
 
 	if len(program.Statements) != 1 {
 		t.Fatalf("Program statements does not contain  statments. got=%d", len(program.Statements))
@@ -368,7 +370,7 @@ func TestFunctionLiteralParsing(t *testing.T) {
 	p := parser.New(l)
 
 	program := p.ParseProgram()
-	checkParseErrrors(t, p)
+	checkParserErrors(t, p)
 
 	if len(program.Statements) != 1 {
 		t.Fatalf("Program statements does not contain  statments. got=%d", len(program.Statements))
@@ -419,7 +421,7 @@ func TestFunctionLiteralParameterParsing(t *testing.T) {
 		p := parser.New(l)
 
 		program := p.ParseProgram()
-		checkParseErrrors(t, p)
+		checkParserErrors(t, p)
 
 		stmt := program.Statements[0].(*ast.ExpressionStatement)
 		function := stmt.Expression.(*ast.FunctionLiteral)
@@ -441,7 +443,7 @@ func TestCallExpression(t *testing.T) {
 	p := parser.New(l)
 
 	program := p.ParseProgram()
-	checkParseErrrors(t, p)
+	checkParserErrors(t, p)
 
 	if len(program.Statements) != 1 {
 		t.Fatalf("Program statements does not contain  statments. got=%d", len(program.Statements))
@@ -466,13 +468,13 @@ func TestCallExpression(t *testing.T) {
 		t.Fatalf("Length argument is not 3 got=%d", len(exp.Arguments))
 	}
 
-	testLiteralExpression(t, exp.Arguments[0],1)
+	testLiteralExpression(t, exp.Arguments[0], 1)
 	testInflixExpression(t, exp.Arguments[1], 2, "*", 3)
 	testInflixExpression(t, exp.Arguments[2], 4, "+", 5)
 
 }
 
-func testInegerLiteral(t *testing.T, il ast.Expression, value int64) bool {
+func testIntegerLiteral(t *testing.T, il ast.Expression, value int64) bool {
 	integ, ok := il.(*ast.IntegerLiteral)
 
 	if !ok {
@@ -517,7 +519,7 @@ func testVarStatement(t *testing.T, s ast.Statement, name string) bool {
 	return true
 }
 
-func checkParseErrrors(t *testing.T, p *parser.Parser) {
+func checkParserErrors(t *testing.T, p *parser.Parser) {
 	errors := p.Errors()
 	if len(errors) == 0 {
 		return
@@ -552,9 +554,9 @@ func testIdentifer(t *testing.T, exp ast.Expression, value string) bool {
 func testLiteralExpression(t *testing.T, exp ast.Expression, expected interface{}) bool {
 	switch v := expected.(type) {
 	case int:
-		return testInegerLiteral(t, exp, int64(v))
+		return testIntegerLiteral(t, exp, int64(v))
 	case int64:
-		return testInegerLiteral(t, exp, v)
+		return testIntegerLiteral(t, exp, v)
 	case string:
 		return testIdentifer(t, exp, v)
 	case bool:
@@ -615,7 +617,7 @@ func TestStringLiteralExpression(t *testing.T) {
 	p := parser.New(l)
 
 	program := p.ParseProgram()
-	checkParseErrrors(t, p)
+	checkParserErrors(t, p)
 
 	stmt := program.Statements[0].(*ast.ExpressionStatement)
 	literal, ok := stmt.Expression.(*ast.StringLiteral)
@@ -625,5 +627,52 @@ func TestStringLiteralExpression(t *testing.T) {
 
 	if literal.Value != "hello world" {
 		t.Fatalf("literal.Value not %q got=%q", "hello world", literal.Value)
+	}
+}
+func TestParsingArrayLiteral(t *testing.T) {
+	input := "[1,2 * 2, 3 + 3]"
+	l := lexer.New(input)
+	p := parser.New(l)
+
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	stmt, _ := program.Statements[0].(*ast.ExpressionStatement)
+	array, ok := stmt.Expression.(*ast.ArrayLiteral)
+
+	if !ok {
+		t.Fatalf("exp not ast.ArrayLiteral")
+	}
+
+	if len(array.Elements) != 3 {
+		t.Fatalf("len(array.Elements) not 3 got=%d", len(array.Elements))
+	}
+
+	testIntegerLiteral(t, array.Elements[0], 1)
+	testInflixExpression(t, array.Elements[1], 2, "*", 2)
+	testInflixExpression(t, array.Elements[2], 3, "+", 3)
+}
+
+func TestParsingIndexExpressions(t *testing.T) {
+	input := "myArray[1 + 1]"
+	l := lexer.New(input)
+	p := parser.New(l)
+
+	program := p.ParseProgram()
+	checkParserErrors(t,p)
+
+	stmt, _ := program.Statements[0].(*ast.ExpressionStatement)
+	indexExp, ok := stmt.Expression.(*ast.IndexExpression)
+
+	if !ok {
+		t.Fatalf("exp not *as.IndexExpression")
+	}
+
+	if !testIdentifer(t, indexExp.Left, "myArray"){
+		return
+	}
+
+	if !testInflixExpression(t, indexExp.Index, 1, "+", 1) {
+		return
 	}
 }

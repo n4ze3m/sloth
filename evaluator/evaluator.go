@@ -23,6 +23,8 @@ var builtins = map[string]*object.Builtin{
 			switch arg := args[0].(type) {
 			case *object.String:
 				return &object.Integer{Value: int64(len(arg.Value))}
+			case *object.Array:
+				return &object.Integer{Value: int64(len(arg.Elements))}
 			default:
 				return newError("argument to `len` not supported, got %s", args[0].Type())
 			}
@@ -36,6 +38,15 @@ var builtins = map[string]*object.Builtin{
 					return newError("argument to `concat` not supported, got %s", arg.Type())
 				}
 				result += arg.(*object.String).Value + " "
+			}
+			return &object.String{Value: strings.Trim(result, " ")}
+		},
+	},
+	"print": {
+		Fn: func(args ...object.Object) object.Object {
+			var result string
+			for _, arg := range args {
+				result += arg.Inspect() + " "
 			}
 			return &object.String{Value: strings.Trim(result, " ")}
 		},
@@ -102,7 +113,25 @@ func Eval(node ast.Node, env *object.Enviroment) object.Object {
 		return applyFunction(function, args)
 	case *ast.StringLiteral:
 		return &object.String{Value: node.Value}
+	case *ast.ArrayLiteral:
+		elements := evalExpressions(node.Elements, env)
+		if len(elements) == 1 && isError(elements[0]) {
+			return elements[0]
+		}
+		return &object.Array{Elements: elements}
+	case *ast.IndexExpression:
+		left := Eval(node.Left, env)
+		if isError(left) {
+			return left
+		}
+		index := Eval(node.Index, env)
+		if isError(index) {
+			return index
+		}
+
+		return evalIndexExpression(left, index)
 	}
+
 	return nil
 }
 
@@ -320,4 +349,26 @@ func evalStringInflixExpression(operator string, left, right object.Object) obje
 	return &object.String{
 		Value: leftVal + rightVal,
 	}
+}
+
+func evalIndexExpression(left, index object.Object) object.Object {
+	switch {
+	case left.Type() == object.ARRAY_OBJ && index.Type() == object.INTEGER_OBJ:
+		return evalArrayIndexExpression(left, index)
+	default:
+		return newError("index operator not supported")
+	}
+
+}
+
+func evalArrayIndexExpression(array, index object.Object) object.Object {
+	arrayObject := array.(*object.Array)
+	idx := index.(*object.Integer).Value
+	max := int64(len(arrayObject.Elements) - 1)
+
+	if idx < 0 || idx > max {
+		return NULL
+	}
+
+	return arrayObject.Elements[idx]
 }

@@ -1,6 +1,6 @@
 # Sloth
 
-Sloth is a simple interpeter written in Golang. This is hoby project for learning golang.
+Sloth is a simple interpeter written in Golang. This is hoby project for learning golang. I converted this to WebAssembly :) program, now i can run it on browser.
 
 ## Syntax
 
@@ -53,3 +53,26 @@ hello world
 
 - `len(a)`: returns length of array
 - `concat(a,b)`: concatenates two strings
+
+6. Array
+
+```shell
+>>> var a = [1,2 + 2,3]
+>>> a[0]
+1
+>>> a[1]
+4
+```
+
+## Build
+
+1. WASM build
+
+    $ cd wasm
+    $ $ENV:GOOS=js 
+    $ $ENV:GOARCH=wasm 
+    $ go build -o sloth.wasm
+
+# Btw
+
+I wrote this project based on Thorsten Ball's [Writing an Interpreter in Go](https://interpreterbook.com/).
