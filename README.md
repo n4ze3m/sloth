@@ -53,3 +53,8 @@ hello world
 
 - `len(a)`: returns length of array
 - `concat(a,b)`: concatenates two strings
+
+
+# Btw
+
+I wrote this project based on Thorsten Ball's [Writing an Interpreter in Go](https://interpreterbook.com/).
