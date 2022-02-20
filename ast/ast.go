@@ -140,6 +140,16 @@ func (il *IntegerLiteral) expressionNode()      {}
 func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Literal }
 func (il *IntegerLiteral) String() string       { return il.Token.Literal }
 
+
+type DobuleLiteral struct {
+	Token token.Token
+	Value float64
+}
+
+func (il *DobuleLiteral) expressionNode()      {}
+func (il *DobuleLiteral) TokenLiteral() string { return il.Token.Literal }
+func (il *DobuleLiteral) String() string       { return il.Token.Literal }
+
 type PrefixExpression struct {
 	Token    token.Token
 	Operator string
@@ -367,4 +377,19 @@ func (ie *IndexExpression) String() string {
 	out.WriteString("])")
 
 	return out.String()
+}
+
+type Comment struct {
+	Token token.Token
+	Value string
+}
+
+func (sl *Comment) expressionNode() {}
+
+func (sl *Comment) TokenLiteral() string {
+	return sl.Token.Literal
+}
+
+func (sl *Comment) String() string {
+	return sl.Token.Literal
 }

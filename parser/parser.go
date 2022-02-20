@@ -30,6 +30,7 @@ var procedences = map[token.TokenType]int{
 	token.MINUS:    SUM,
 	token.SLASH:    PRODUCT,
 	token.ASTERISK: PRODUCT,
+	token.MODULO:   PRODUCT,
 	token.LPAREN:   CALL,
 	token.LBRACKET: INDEX,
 }
@@ -50,6 +51,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
 	p.registerPrefix(token.IDENT, p.parseIdentifier)
 	p.registerPrefix(token.INT, p.parseIntegerLiteral)
+	p.registerPrefix(token.FLOAT, p.parseDoubleLiteral)
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
 	p.registerPrefix(token.TRUE, p.parseBoolean)
@@ -59,11 +61,12 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
 	p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
-	
+
 	p.inflixParseFns = make(map[token.TokenType]inflixParseFn)
 	p.registerInflix(token.PLUS, p.parseInflixExpression)
 	p.registerInflix(token.MINUS, p.parseInflixExpression)
 	p.registerInflix(token.SLASH, p.parseInflixExpression)
+	p.registerInflix(token.MODULO, p.parseInflixExpression)
 	p.registerInflix(token.ASTERISK, p.parseInflixExpression)
 	p.registerInflix(token.EQ, p.parseInflixExpression)
 	p.registerInflix(token.NOT_EQ, p.parseInflixExpression)
@@ -107,6 +110,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseVarStatement()
 	case token.RETURN:
 		return p.parseReturnStatement()
+	case token.HASH:
+		return nil
 	default:
 		return p.parseExpressionStatement()
 	}
@@ -186,6 +191,18 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 	value, err := strconv.ParseInt(p.curToken.Literal, 0, 64)
 	if err != nil {
 		msg := fmt.Sprintf("could not parse %q as interger", p.curToken.Literal)
+		p.errors = append(p.errors, msg)
+		return nil
+	}
+	lit.Value = value
+	return lit
+}
+
+func (p *Parser) parseDoubleLiteral() ast.Expression {
+	lit := &ast.DobuleLiteral{Token: p.curToken}
+	value, err := strconv.ParseFloat(p.curToken.Literal, 64)
+	if err != nil {
+		msg := fmt.Sprintf("could not parse %q as float", p.curToken.Literal)
 		p.errors = append(p.errors, msg)
 		return nil
 	}

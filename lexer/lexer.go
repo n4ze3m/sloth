@@ -1,6 +1,8 @@
 package lexer
 
-import "github.com/nazeemnato/sloth/token"
+import (
+	"github.com/nazeemnato/sloth/token"
+)
 
 type Lexer struct {
 	input        string
@@ -63,6 +65,8 @@ func (l *Lexer) NextToken() token.Token {
 		}
 	case '/':
 		tok = newToken(token.SLASH, l.ch)
+	case '%':
+		tok = newToken(token.MODULO, l.ch)
 	case '*':
 		tok = newToken(token.ASTERISK, l.ch)
 	case '<':
@@ -76,6 +80,9 @@ func (l *Lexer) NextToken() token.Token {
 	case '"':
 		tok.Type = token.STRING
 		tok.Literal = l.readString()
+	case '#':
+		tok.Type = token.HASH
+		tok.Literal = l.readString()
 	case 0:
 		tok.Literal = ""
 		tok.Type = token.EOF
@@ -88,6 +95,10 @@ func (l *Lexer) NextToken() token.Token {
 		} else if isDigit(l.ch) {
 			tok.Type = token.INT
 			tok.Literal = l.readNumber()
+			return tok
+		} else if isDecimal(l.ch) {
+			tok.Type = token.FLOAT
+			tok.Literal = l.readDecimalNumber()
 			return tok
 		} else {
 			tok = newToken(token.ILLEGAL, l.ch)
@@ -130,8 +141,21 @@ func (l *Lexer) readNumber() string {
 	return l.input[position:l.position]
 }
 
+func (l *Lexer) readDecimalNumber() string {
+
+	for isDigit(l.ch) || l.ch == '.' {
+		l.readChar()
+	}
+	// fmt.Println(l.input[l.position-1 : l.position])
+	return l.input[l.position-1 : l.position]
+}
+
 func isDigit(ch byte) bool {
 	return '0' <= ch && ch <= '9'
+}
+// check digital contains decimal point
+func isDecimal(ch byte) bool {
+	return '0' <= ch && ch <= '9' || ch == '.' || ch == 'e' || ch == 'E'
 }
 
 func (l *Lexer) peekChar() byte {

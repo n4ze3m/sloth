@@ -14,6 +14,7 @@ type BuiltinFunctiom func(args ...Object) Object
 
 const (
 	INTEGER_OBJ      = "INTEGER"
+	FLOAT_OBJ        = "FLOAT"
 	BOOLEAN_OBJ      = "BOOLEAN"
 	NULL_OBJ         = "NULL"
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
@@ -22,6 +23,7 @@ const (
 	STRING_OBJ       = "STRING"
 	BUILTIN_OBJ      = "BUILTIN"
 	ARRAY_OBJ        = "ARRAY"
+	COMMENT_OBJ      = "COMMENT"
 )
 
 type Object interface {
@@ -39,6 +41,18 @@ func (i *Integer) Inspect() string {
 
 func (i *Integer) Type() ObjectType {
 	return INTEGER_OBJ
+}
+
+type Double struct {
+	Value float64
+}
+
+func (i *Double) Inspect() string {
+	return fmt.Sprintf("%f", i.Value)
+}
+
+func (i *Double) Type() ObjectType {
+	return FLOAT_OBJ
 }
 
 type Boolean struct {
