@@ -68,10 +68,12 @@ hello world
 
 1. WASM build
 
-    $ cd wasm
-    $ $ENV:GOOS=js 
-    $ $ENV:GOARCH=wasm 
-    $ go build -o sloth.wasm
+```shell
+$ cd wasm
+$ $ENV:GOOS="js"
+$ $ENV:GOARCH="wasm" 
+$ go build -o ../build/sloth.wasm
+```
 
 # Btw
 

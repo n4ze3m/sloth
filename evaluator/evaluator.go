@@ -47,6 +47,7 @@ var builtins = map[string]*object.Builtin{
 			var result string
 			for _, arg := range args {
 				result += arg.Inspect() + " "
+				fmt.Println(arg.Inspect())
 			}
 			return &object.String{Value: strings.Trim(result, " ")}
 		},
