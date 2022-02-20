@@ -49,7 +49,7 @@ var builtins = map[string]*object.Builtin{
 				result += arg.Inspect() + " "
 				fmt.Println(arg.Inspect())
 			}
-			return &object.String{Value: strings.Trim(result, " ")}
+			return &object.String{Value: ""}
 		},
 	},
 }
