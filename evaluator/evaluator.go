@@ -62,6 +62,8 @@ func Eval(node ast.Node, env *object.Enviroment) object.Object {
 		return Eval(node.Expression, env)
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: node.Value}
+	case *ast.DobuleLiteral:
+		return &object.Double{Value: node.Value}
 	case *ast.Boolean:
 		return nativeBooltoBooleanObject(node.Value)
 	case *ast.PrefixExpression:
@@ -129,8 +131,9 @@ func Eval(node ast.Node, env *object.Enviroment) object.Object {
 		if isError(index) {
 			return index
 		}
-
 		return evalIndexExpression(left, index)
+	case *ast.Comment:
+		return nil
 	}
 
 	return nil

@@ -15,6 +15,7 @@ const (
 
 	IDENT = "IDENT"
 	INT   = "INT"
+	FLOAT = "FLOAT"
 
 	// operators
 
@@ -24,21 +25,25 @@ const (
 	BANG     = "!"
 	ASTERISK = "*"
 	SLASH    = "/"
+	MODULO   = "%"
 
 	LT = "<"
 	GT = ">"
+	LTE = "<="
+	GTE = ">="
 
 	// Delimiters
 
 	COMMA    = ","
 	SEMICOLN = ";"
+	HASH     = "#"
 
-	LPAREN = "("
-	RPAREN = ")"
-	LBRACE = "{"
-	RBRACE = "}"
-	LBRACKET="["
-	RBRACKET="]"
+	LPAREN   = "("
+	RPAREN   = ")"
+	LBRACE   = "{"
+	RBRACE   = "}"
+	LBRACKET = "["
+	RBRACKET = "]"
 
 	EQ     = "=="
 	NOT_EQ = "!="
